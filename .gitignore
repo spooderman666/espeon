@@ -1,0 +1,10 @@
+.env
+vadoo_vids
+__pycache__
+client_secret.json
+storage_path
+
+test*
+*.git
+*.log
+*.txt
