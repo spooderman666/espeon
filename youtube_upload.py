@@ -29,7 +29,7 @@ def merge_videos(vid_name):
 ##################################################################
 # Upload to youtube
 ##################################################################
-def upload_video(title, description, vid_name): 
+def upload_video(title, description, category, vid_name, tags): 
     # merge_videos(vid_name=vid_name)
     logger.info('Uploading. . .')
     # loggin into the channel
@@ -44,16 +44,17 @@ def upload_video(title, description, vid_name):
         title = title[0:90] + '...'
     video.set_title(title)
     video.set_description(description)
-    # video.set_tags(tags)
-    # video.set_category(category)
+    video.set_tags(tags)
+    video.set_category(category)
     video.set_default_language("en-US")
 
     try:
         video = channel.upload_video(video)
-    except:
-        # print('playlist error')
+        logger.info(f"Uploaded video {title}")
+    except Exception as e:
+        print(e)
         print(video)
-        logger.info('error?')
+        logger.error(f"Could not upload to YoutTube: ({e}")
 
 
     # Remove all videos except jiggly

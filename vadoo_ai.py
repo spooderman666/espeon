@@ -8,6 +8,9 @@ from dotenv import load_dotenv
 
 from youtube_upload import upload_video
 
+tags = ["GreekMythology", "RomanMythology", "AncientMyths", "MythicalTales", "LegendsAndLore", "AnimatedShort", "Storytime", "VisualStorytelling"]
+PROMPT_FILE = "/home/vector/vsCode/espeon/prompts.txt"
+
 # Setup logging
 logger = logging.getLogger(__name__)
 logging.basicConfig(filename="/home/vector/vsCode/espeon/vadoo.log", level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -83,7 +86,10 @@ STYLES = [
     "watercolor"
 ]
 DURATIONS = ["30-60", "60-90", "90-120", "5 min", "10 min"]
-PROMPTS = ["Pandoras Box", "Daedalus and Icarus", "Persephone"]
+
+# Read the available prompts from the text file
+with open(PROMPT_FILE, "r") as file:
+    PROMPTS = file.read().splitlines()
 
 # Use OpenAI API to generate a story with a title based on a prompt provided
 def generate_story(prompt):
@@ -91,7 +97,7 @@ def generate_story(prompt):
     payload = {
             "messages":[{
                 "role":"user",
-                "content":prompt
+                "content": f"Tell me the story of: {prompt}"
                 }],
             "web_access":False
         }
@@ -192,11 +198,17 @@ if(story_data):
 #                         })
 
 # Manual single video run
-# vid_id = "582494681685"
+# vid_id = "793833693952"
 # story_data = {
 #   "title": "The Ember of Eldrador: A Blaze of Bravery",
 #   "story": "As the sun dipped into the horizon, casting a fiery glow over the land, Eira Shadowglow stood at the edge of the mystical forest, her eyes fixed on the ancient dragon, Tharros the Unyielding. The beast's scales glistened like polished obsidian, and its fiery breath illuminated the darkening sky. Eira's mission was clear: rescue Princess Lyra, the last heir of the Eldridian throne, from Tharros' clutches. The dragon had taken the princess to its lair, deep within the heart of the forest, and Eira was determined to put an end to its reign of terror. With her trusty sword, Ember, at her side, Eira charged forward, her heart pounding in her chest. The air was thick with the scent of smoke and ash as she battled her way through the treacherous terrain, dodging Tharros' flames and striking back with precision. As she approached the lair, the dragon's roar grew louder, and Eira could feel the ground shaking beneath her feet. With a fierce cry, she burst into the lair, her sword flashing in the dim light. Tharros loomed before her, its eyes blazing with fury. The battle was fierce, the two combatants exchanging blows and neither gaining the upper hand. But Eira refused to yield, her determination fueled by the thought of Lyra's innocent face. In a final, desperate bid to defeat the dragon, Eira unleashed a mighty swing of Ember, striking true and shattering Tharros' scales. The beast let out a deafening roar as it stumbled, its flames dying out. Eira seized the opportunity, striking the final blow and sending Tharros crashing to the ground. With the dragon defeated, Eira rushed to Lyra's side, freeing her from her prison. Together, they escaped the lair, and as they emerged into the bright sunlight, Eira knew that her bravery had saved not only the princess, but also the kingdom itself."
 # }
+
+# Remove the prompt from the list that was taken for the generated video
+PROMPTS.remove(prompt[0])
+with open(PROMPT_FILE, 'w') as file:
+    for item in PROMPTS:
+        file.write(f"{item}\n")
 
 # Make sure a video was generated before downloading/posting
 if(vid_id):
@@ -208,4 +220,6 @@ if(vid_id):
     title = f"{topic} #{vid_id[-4:]}"
     description = f"A {topic} told by {voice} in {style}"
     if(vid_name):
-        upload_video(title=prompt[0], description=story_data, vid_name="vadoo_vids/" + vid_name)
+        title_tag = prompt[0].replace(" ", "")
+        tags.append(title_tag)
+        upload_video(title=prompt[0], description=story_data, category=24, vid_name="vadoo_vids/" + vid_name, tags=tags)
