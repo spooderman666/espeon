@@ -4,12 +4,23 @@ import logging
 import requests
 import json
 import time
+from datetime import date
 from dotenv import load_dotenv
 
 from youtube_upload import upload_video
 
 tags = ["GreekMythology", "RomanMythology", "AncientMyths", "MythicalTales", "LegendsAndLore", "AnimatedShort", "Storytime", "VisualStorytelling"]
-PROMPT_FILE = "/home/vector/vsCode/espeon/prompts.txt"
+# PROMPT_FILE = "/home/vector/vsCode/espeon/prompts.txt"
+
+# Pick which topic to post on based on the day of the week
+today = date.today()
+day_of_week = today.weekday()
+if(day_of_week == 1 or day_of_week == 3 or day_of_week == 5 or day_of_week == 0):
+    PROMPT_FILE = "/home/vector/vsCode/espeon/what_if.json"
+elif(day_of_week == 6):
+    PROMPT_FILE = "/home/vector/vsCode/espeon/modern_myth.json"
+elif(day_of_week == 2 or day_of_week == 4):
+    PROMPT_FILE = "/home/vector/vsCode/espeon/lesser_known.json"
 
 # Setup logging
 logger = logging.getLogger(__name__)
@@ -88,8 +99,9 @@ STYLES = [
 DURATIONS = ["30-60", "60-90", "90-120", "5 min", "10 min"]
 
 # Read the available prompts from the text file
-with open(PROMPT_FILE, "r") as file:
-    PROMPTS = file.read().splitlines()
+with open(PROMPT_FILE) as f:
+    PROMPTS = json.load(f)
+    
 
 # Use OpenAI API to generate a story with a title based on a prompt provided
 def generate_story(prompt):
@@ -97,7 +109,7 @@ def generate_story(prompt):
     payload = {
             "messages":[{
                 "role":"user",
-                "content": f"Tell me the story of: {prompt}"
+                "content": prompt
                 }],
             "web_access":False
         }
@@ -174,13 +186,14 @@ topic = random.choice(TOPICS)
 theme = random.choice(THEMES)
 voice = random.choice(VOICES)
 style = random.choice(STYLES)
-prompt = random.choices(PROMPTS)
-logger.info(f"\nStarting new video generation. . .")
+prompt_obj = random.choices(PROMPTS)
+title = prompt_obj[0]["title"]
+logger.info(f"\nStarting new video generation for: {prompt_obj}. . .")
 
 # Generate a story and title based on a random prompt
-story_data = generate_story(prompt[0])
+story_data = generate_story(prompt_obj[0]["prompt"])
 if(story_data):
-    logger.info(f"Telling story of {prompt[0]}")
+    logger.info(f"Generating vide of: {title}")
     vid_id = generate_video({
         "topic": "Custom",
         "prompt": story_data,
@@ -205,10 +218,13 @@ if(story_data):
 # }
 
 # Remove the prompt from the list that was taken for the generated video
-PROMPTS.remove(prompt[0])
-with open(PROMPT_FILE, 'w') as file:
-    for item in PROMPTS:
-        file.write(f"{item}\n")
+
+# Save the updated list back to a new JSON file
+updated_prompts = [item for item in PROMPTS if item.get("title") != title]
+with open(PROMPT_FILE, 'w') as f:
+    json.dump(updated_prompts, f, indent=4)
+# print(prompt_obj[0]["title"])
+# print(story_data)
 
 # Make sure a video was generated before downloading/posting
 if(vid_id):
@@ -217,9 +233,7 @@ if(vid_id):
     vid_name = get_video(vid_id)
 
     # Make sure the video was downloaded, then push the video to YouTube
-    title = f"{topic} #{vid_id[-4:]}"
-    description = f"A {topic} told by {voice} in {style}"
     if(vid_name):
-        title_tag = prompt[0].replace(" ", "")
+        title_tag = title.replace(" ", "")
         tags.append(title_tag)
-        upload_video(title=prompt[0], description=story_data, category=24, vid_name="vadoo_vids/" + vid_name, tags=tags)
+        upload_video(title=title, description=story_data, category=24, vid_name="vadoo_vids/" + vid_name, tags=tags)
